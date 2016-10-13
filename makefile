@@ -520,6 +520,9 @@ ifneq ($(USE_SCALE_EFFECTS),)
 DEFS += -DUSE_SCALE_EFFECTS
 endif
 
+ifdef MSVC_BUILD
+DEFS += -DNO_MEM_TRACKING
+endif
 
 #-------------------------------------------------
 # compile flags
