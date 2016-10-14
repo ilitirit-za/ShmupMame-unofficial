@@ -603,8 +603,11 @@ COBJFLAGS += \
 
 # warnings only applicable to C++ compiles
 CPPONLYFLAGS += \
-	-Woverloaded-virtual \
-	-std=c++98
+	-Woverloaded-virtual
+	
+ifndef MSVC_BUILD
+CPPONLYFLAGS +=	-std=c++98
+endif
 
 #-------------------------------------------------
 # include paths
