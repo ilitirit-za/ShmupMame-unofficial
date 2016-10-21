@@ -55,7 +55,9 @@
 #include "translate.h"
 
 #ifdef _MSC_VER
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #endif
 
 #define MAX_EXTRA_FOLDERS 256

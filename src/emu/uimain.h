@@ -27,13 +27,14 @@ public:
 private:
 	enum {
 		INPUT_GROUPS,
+		INPUT_QUICK,
 		INPUT_SPECIFIC,
-//#ifdef USE_AUTOFIRE
+#ifdef USE_AUTOFIRE
 		AUTOFIRE,
-//#endif /* USE_AUTOFIRE */
-//#ifdef USE_CUSTOM_BUTTON
+#endif /* USE_AUTOFIRE */
+#ifdef USE_CUSTOM_BUTTON
 		CUSTOM_BUTTON,
-//#endif /* USE_CUSTOM_BUTTON */
+#endif /* USE_CUSTOM_BUTTON */
 		SETTINGS_DIP_SWITCHES,
 		SETTINGS_DRIVER_CONFIG,
 		ANALOG,
@@ -49,15 +50,15 @@ private:
 		SLIDERS,
 		VIDEO_TARGETS,
 		VIDEO_OPTIONS,
-//#ifdef USE_SCALE_EFFECTS
+#ifdef USE_SCALE_EFFECTS
 		SCALE_EFFECT,
-//#endif /* USE_SCALE_EFFECTS */
+#endif /* USE_SCALE_EFFECTS */
 		CROSSHAIR,
 		CHEAT,
 		MEMORY_CARD,
-//#ifdef CMD_LIST
+#ifdef CMD_LIST
 		COMMAND,
-//#endif /* CMD_LIST */
+#endif /* CMD_LIST */
 		SELECT_GAME,
 		BIOS_SELECTION,
 	};
@@ -104,6 +105,8 @@ public:
 };
 
 class ui_menu_input : public ui_menu {
+	friend class menu_input_quick;
+		
 public:
 	ui_menu_input(running_machine &machine, render_container *container);
 	virtual ~ui_menu_input();
@@ -134,11 +137,13 @@ protected:
 	virtual void update_input(struct input_item_data *seqchangeditem) = 0;
 	void toggle_none_default(input_seq &selected_seq, input_seq &original_seq, const input_seq &selected_defseq);
 	const input_seq &get_field_default_seq(ioport_field *field, input_seq_type seqtype);
+	
 
 protected:
 	const void *        pollingref;
 	input_seq_type      pollingseq;
 	input_item_data *   pollingitem;
+	input_item_data *	m_itemlist = NULL;
 
 private:
 	UINT16              last_sortorder;
@@ -157,6 +162,22 @@ public:
 protected:
 	int group;
 	virtual void update_input(struct input_item_data *seqchangeditem);
+};
+
+class menu_input_quick : public ui_menu_input
+{
+public:
+	menu_input_quick(running_machine &machine, render_container *container);
+	virtual ~menu_input_quick() override;
+
+private:
+	virtual void populate() override;
+
+	virtual void handle() override;
+	
+	virtual void update_input(struct input_item_data *seqchangeditem);
+
+	ui_menu_event quick_config_event;
 };
 
 class ui_menu_input_specific : public ui_menu_input {

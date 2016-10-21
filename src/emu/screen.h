@@ -338,7 +338,7 @@ private:
 	// static data
 	static UINT32       m_id_counter; // incremented for each constructed screen_device,
 										// used as a unique identifier during runtime
-/*
+
 #ifdef USE_SCALE_EFFECTS
 public:
 	// scale effect rendering
@@ -355,7 +355,7 @@ private:
 	bitmap_rgb32 *          m_scale_bitmap[2];
 	bitmap_rgb32 *          m_work_bitmap[2][2];
 	int                     m_scale_dirty[2];
-#endif // USE_SCALE_EFFECTS */
+#endif // USE_SCALE_EFFECTS
 };
 
 // device type definition

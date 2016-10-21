@@ -1900,7 +1900,7 @@ void input_manager::seq_poll_start(input_item_class itemclass, const input_seq *
 //  input_seq_poll - continue polling
 //-------------------------------------------------
 
-bool input_manager::seq_poll()
+bool input_manager::seq_poll(bool useLongPoll)
 {
 	int curlen = m_poll_seq.length();
 	input_code lastcode = m_poll_seq[curlen - 1];
@@ -1975,7 +1975,11 @@ bool input_manager::seq_poll()
 	}
 
 	// if we're recorded at least one item and 2/3 of a second has passed, we're done
-	if (m_poll_seq_last_ticks != 0 && osd_ticks() > m_poll_seq_last_ticks + osd_ticks_per_second() * 2 / 3)
+	bool enoughTimeElapsed = useLongPoll
+		? m_poll_seq_last_ticks != 0 && osd_ticks() > m_poll_seq_last_ticks + osd_ticks_per_second() * 2 / 3
+		: m_poll_seq_last_ticks != 0 && osd_ticks() > m_poll_seq_last_ticks + osd_ticks_per_second() * 1 / 8;
+
+	if (enoughTimeElapsed)
 	{
 		// if the final result is invalid, reset to nothing
 		if (!m_poll_seq.is_valid())

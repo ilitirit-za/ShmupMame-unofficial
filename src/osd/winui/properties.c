@@ -149,7 +149,9 @@ b) Exit the dialog.
 #include <ddraw.h>
 
 #ifdef _MSC_VER
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 #endif
 
 #include "directdraw.h" /* has to be after samples.h */

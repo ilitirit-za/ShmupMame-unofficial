@@ -265,16 +265,19 @@ DRVLIST += \
 	$(MAMEOBJ)/mamehb.lst \
 	$(MAMEOBJ)/mamedecrypted.lst \
 
+#$(MAMEOBJ)/alba.a \
+#$(MAMEOBJ)/barcrest.a \
+#$(MAMEOBJ)/bfm.a \
+#$(MAMEOBJ)/sure.a \
+#$(MAMEOBJ)/pinball.a \
+    
 DRVLIBS += \
 	$(MAMEOBJ)/acorn.a \
-	$(MAMEOBJ)/alba.a \
 	$(MAMEOBJ)/alpha.a \
 	$(MAMEOBJ)/amiga.a \
 	$(MAMEOBJ)/ascii.a \
 	$(MAMEOBJ)/atari.a \
 	$(MAMEOBJ)/atlus.a \
-	$(MAMEOBJ)/barcrest.a \
-	$(MAMEOBJ)/bfm.a \
 	$(MAMEOBJ)/capcom.a \
 	$(MAMEOBJ)/cinemat.a \
 	$(MAMEOBJ)/comad.a \
@@ -331,7 +334,6 @@ DRVLIBS += \
 	$(MAMEOBJ)/stern.a \
 	$(MAMEOBJ)/sun.a \
 	$(MAMEOBJ)/suna.a \
-	$(MAMEOBJ)/sure.a \
 	$(MAMEOBJ)/taito.a \
 	$(MAMEOBJ)/tatsumi.a \
 	$(MAMEOBJ)/tch.a \
@@ -351,7 +353,6 @@ DRVLIBS += \
 	$(MAMEOBJ)/yunsung.a \
 	$(MAMEOBJ)/zaccaria.a \
 	$(MAMEOBJ)/misc.a \
-	$(MAMEOBJ)/pinball.a \
 	$(MAMEOBJ)/shared.a \
 
 
@@ -2030,8 +2031,16 @@ $(VIDEO)/n64.o:		$(MAMESRC)/video/rdpfiltr.c
 #-------------------------------------------------
 
 #FIXME
+ifndef MSVC_BUILD
 $(MAMEOBJ)/%.lst:	$(MAMESRC)/%.lst
 	@echo Generating $@...
 	@echo \#include \<"$<"\> > "$@.h"
 	$(CC) $(CDEFS) $(INCPATH) -I. -E $@.h -o $@
+endif
 
+ifdef MSVC_BUILD
+$(MAMEOBJ)/%.lst:	$(MAMESRC)/%.lst
+	@echo Generating $@...
+	@echo \#include \<"$<"\> > "$@.h"
+	$(CC) $(CDEFS) $(INCPATH) -I. //EP $@.h > $@
+endif

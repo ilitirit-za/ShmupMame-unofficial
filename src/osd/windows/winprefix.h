@@ -55,8 +55,8 @@
 #include <assert.h>
 #include <malloc.h>
 #define alloca _alloca
-#define round(x) floor((x) + 0.5)
 #if _MSC_VER < 1500
+#define round(x) floor(x + 0.5)
 #define vsnprintf _vsnprintf
 #endif
 #endif
@@ -72,7 +72,9 @@
 #define PATH_SEPARATOR      "\\"
 
 #ifdef _MSC_VER
+#if _MSC_VER < 1900
 #define snprintf _snprintf
+#endif
 
 /* Turn off type mismatch warnings */
 #pragma warning(disable:592)		// "variable is used before its value is set"

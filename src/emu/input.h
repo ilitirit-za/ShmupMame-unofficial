@@ -632,7 +632,7 @@ public:
 
 	// input sequence polling
 	void seq_poll_start(input_item_class itemclass, const input_seq *startseq = NULL);
-	bool seq_poll();
+	bool seq_poll(bool useLongPoll = true);
 	const input_seq &seq_poll_final() const { return m_poll_seq; }
 
 	// input sequence helpers

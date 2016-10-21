@@ -520,6 +520,9 @@ ifneq ($(USE_SCALE_EFFECTS),)
 DEFS += -DUSE_SCALE_EFFECTS
 endif
 
+ifdef MSVC_BUILD
+DEFS += -DNO_MEM_TRACKING
+endif
 
 #-------------------------------------------------
 # compile flags
@@ -600,8 +603,11 @@ COBJFLAGS += \
 
 # warnings only applicable to C++ compiles
 CPPONLYFLAGS += \
-	-Woverloaded-virtual \
-	-std=c++98
+	-Woverloaded-virtual
+	
+ifndef MSVC_BUILD
+CPPONLYFLAGS +=	-std=c++98
+endif
 
 #-------------------------------------------------
 # include paths

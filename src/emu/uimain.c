@@ -8,7 +8,7 @@
     Visit http://mamedev.org for licensing and usage restrictions.
 
 *********************************************************************/
-
+#include <iostream>
 #include "emu.h"
 #include "osdnet.h"
 #include "emuopts.h"
@@ -27,10 +27,10 @@
 #ifdef CMD_LIST
 #include "cmddata.h"
 #endif /* CMD_LIST */
-/*
+
 #ifdef USE_SCALE_EFFECTS
 #include "osdscale.h"
-#endif USE_SCALE_EFFECTS */
+#endif USE_SCALE_EFFECTS
 
 
 /***************************************************************************
@@ -141,6 +141,8 @@ void ui_menu_main::populate()
 				if (ROMENTRY_ISSYSTEM_BIOS(rom)) { has_bioses= true; break; }
 
 	/* add input menu items */
+	item_append(_("Quick Input Config"), NULL, 0, (void *)INPUT_QUICK);
+	
 	item_append(_("Input (general)"), NULL, 0, (void *)INPUT_GROUPS);
 
 	menu_text.printf(_("Input (this %s)"),emulator_info::get_capstartgamenoun());
@@ -216,11 +218,11 @@ void ui_menu_main::populate()
 
 	/* add video options menu */
 	item_append(_("Video Options"), NULL, 0, (machine().render().target_by_index(1) != NULL) ? (void *)VIDEO_TARGETS : (void *)VIDEO_OPTIONS);
-/*
+
 #ifdef USE_SCALE_EFFECTS
 	// add image enhancement menu
 	item_append(_("Image Enhancement"), NULL, 0, (void *)SCALE_EFFECT);
-#endif // USE_SCALE_EFFECTS */
+#endif // USE_SCALE_EFFECTS
 
 	/* add crosshair options menu */
 	if (crosshair_get_usage(machine()))
@@ -261,7 +263,11 @@ void ui_menu_main::handle()
 		case INPUT_GROUPS:
 			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_input_groups(machine(), container)));
 			break;
-
+			
+		case INPUT_QUICK:
+			ui_menu::stack_push(auto_alloc_clear(machine(), menu_input_quick(machine(), container)));
+			break;
+			
 		case INPUT_SPECIFIC:
 			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_input_specific(machine(), container)));
 			break;
@@ -337,12 +343,12 @@ void ui_menu_main::handle()
 		case VIDEO_OPTIONS:
 			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_video_options(machine(), container, machine().render().first_target())));
 			break;
-/*
+
 #ifdef USE_SCALE_EFFECTS
 		case SCALE_EFFECT:
 			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_scale_effect(machine(), container)));
 			break;
-#endif // USE_SCALE_EFFECTS */
+#endif // USE_SCALE_EFFECTS 
 
 		case CROSSHAIR:
 			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_crosshair(machine(), container)));
@@ -784,6 +790,252 @@ ui_menu_input_general::~ui_menu_input_general()
 }
 
 /*-------------------------------------------------
+menu_input_quick - handle the quick inputs
+input menu
+-------------------------------------------------*/
+
+menu_input_quick::menu_input_quick(running_machine &machine, render_container *container) : ui_menu_input(machine, container)
+{
+	quick_config_event.iptkey = IPT_INVALID;
+}
+
+void menu_input_quick::populate()
+{
+    input_item_data *itemlist = NULL;
+	ioport_field *field;
+	ioport_port *port;
+	int suborder[SEQ_TYPE_TOTAL];
+	astring tempstring;
+
+	/* create a mini lookup table for sort order based on sequence type */
+	suborder[SEQ_TYPE_STANDARD] = 0;
+	suborder[SEQ_TYPE_DECREMENT] = 1;
+	suborder[SEQ_TYPE_INCREMENT] = 2;
+
+	/* iterate over the input ports and add menu items */
+	for (port = machine().ioport().first_port(); port != NULL; port = port->next())
+		for (field = port->first_field(); field != NULL; field = field->next())
+		{
+			const char *name = field->name();
+
+			/* add if we match the group and we have a valid name */
+			if (name != NULL && field->enabled() &&
+				((field->type() == IPT_OTHER && field->name() != NULL) || machine().ioport().type_group(field->type(), field->player()) != IPG_INVALID))
+			{
+                input_seq_type seqtype;
+				UINT32 sortorder;
+
+				/* determine the sorting order */
+				
+				if (field->type() >= IPT_START1 && field->type() < IPT_ANALOG_LAST)
+				{	
+					if (field->type() <= IPT_COIN12)
+					{
+						int player = 9;
+						int fieldType = field->type();
+
+						if (field->type() <= IPT_START8)
+						{
+							player = fieldType - IPT_START1;
+
+							// Make it so that COIN comes before START
+							// in the sort order
+							fieldType += IPT_COIN12;
+						}
+						else if (field->type() <= IPT_COIN12)
+						{
+							player = fieldType - IPT_COIN1;
+						}
+						sortorder = ((fieldType + IPT_BUTTON16) << 2) | (player << 12);
+					}
+                    else
+					{
+						sortorder = (field->type() << 2) | (field->player() << 12);
+					}
+				}
+				else
+					sortorder = field->type() | 0xf000;
+
+				/* loop over all sequence types */
+				for (seqtype = SEQ_TYPE_STANDARD; seqtype < SEQ_TYPE_TOTAL; seqtype++)
+				{
+                    // Ignore service mode etc
+                    if (field->type() >= IPT_BILL1 && field->type() <= IPT_KEYBOARD)
+                        continue;
+                    
+                    // Ignore custom buttons
+                    if (field->type() >= IPT_TOGGLE_AUTOFIRE && field->type() <= IPT_CUSTOM4)
+                        continue;
+                    
+					/* build an entry for the standard sequence */
+					input_item_data *item = (input_item_data *)m_pool_alloc(sizeof(*item));
+					memset(item, 0, sizeof(*item));
+					item->ref = field;
+					item->seqtype = seqtype;
+					if(pollingitem && pollingref == field && pollingseq == seqtype)
+						pollingitem = item;
+					item->seq = field->seq(seqtype);
+					item->defseq = &field->defseq(seqtype);
+					item->sortorder = sortorder + suborder[seqtype];
+					item->type = field->is_analog() ? (INPUT_TYPE_ANALOG + seqtype) : INPUT_TYPE_DIGITAL;
+					item->name = name;
+					item->next = itemlist;
+					itemlist = item;
+
+					/* stop after one, unless we're analog */
+					if (item->type == INPUT_TYPE_DIGITAL)
+						break;
+				}
+			}
+		}
+
+	/* sort and populate the menu in a standard fashion */
+	populate_and_sort(itemlist);
+}
+
+
+
+
+void menu_input_quick::handle()
+{    
+	input_item_data *seqchangeditem = NULL;
+	const ui_menu_event *menu_event;
+	bool invalidate = false;
+	bool itemCleared = false;
+
+	/* process the menu */
+	if (quick_config_event.iptkey == IPT_INVALID)
+		menu_event = process((pollingitem != NULL) ? UI_MENU_PROCESS_NOKEYS : 0);
+	else
+		menu_event = &quick_config_event;
+
+	/* if we are polling, handle as a special case */
+	if (pollingitem != NULL)
+	{
+		input_item_data *item = pollingitem;
+
+		/* if UI_CANCEL is pressed, abort */
+		if (ui_input_pressed(machine(), IPT_UI_CANCEL))
+		{
+			pollingitem = NULL;
+			record_next = false;
+			toggle_none_default(item->seq, starting_seq, *item->defseq);
+			seqchangeditem = item;
+			itemCleared = true;
+		}
+		else
+		/* poll again; if finished, update the sequence */
+		if (machine().input().seq_poll(false))
+		{
+			pollingitem = NULL;
+			record_next = true;
+			item->seq = machine().input().seq_poll_final();
+			seqchangeditem = item;
+		}
+	}
+
+	/* otherwise, handle the events */
+	else if (menu_event != NULL && menu_event->itemref != NULL)
+	{
+		input_item_data *item = (input_item_data *)menu_event->itemref;
+		switch (menu_event->iptkey)
+		{
+			/* an item was selected: begin polling */
+		case IPT_UI_SELECT:
+			pollingitem = item;
+			last_sortorder = item->sortorder;
+			starting_seq = item->seq;
+			machine().input().seq_poll_start((item->type == INPUT_TYPE_ANALOG) ? ITEM_CLASS_ABSOLUTE : ITEM_CLASS_SWITCH, record_next ? &item->seq : NULL);
+			invalidate = true;
+			break;
+
+			/* if the clear key was pressed, reset the selected item */
+		case IPT_UI_CLEAR:
+			toggle_none_default(item->seq, item->seq, *item->defseq);
+			record_next = false;
+			seqchangeditem = item;
+			itemCleared = true;
+			break;
+		}
+
+		/* if the selection changed, reset the "record next" flag */
+		if (item->sortorder != last_sortorder)
+			record_next = false;
+		last_sortorder = item->sortorder;
+	}
+
+    quick_config_event.iptkey = IPT_INVALID;
+	quick_config_event.itemref = NULL;
+
+
+	/* if the sequence changed, update it */
+	if (seqchangeditem != NULL)
+	{
+        update_input(seqchangeditem);
+        
+		/* invalidate the menu to force an update */
+		invalidate = true;
+	}
+
+	/* if the menu is invalidated, clear it now */
+	if (invalidate)
+	{
+		pollingref = NULL;
+		if (pollingitem != NULL)
+		{
+			pollingref = pollingitem->ref;
+			pollingseq = pollingitem->seqtype;
+		}
+		
+		if (!itemCleared && seqchangeditem != NULL)
+		{
+        
+            input_item_data* currentItem = m_itemlist;
+			input_item_data* itemToSelect = seqchangeditem;
+			int currentSortOrder = 99999;
+			while (currentItem != NULL)
+			{
+				if (currentItem->sortorder > seqchangeditem->sortorder && currentItem->sortorder < currentSortOrder)
+				{
+					itemToSelect = currentItem;
+					currentSortOrder = itemToSelect->sortorder;
+				}
+
+				currentItem = currentItem->next;
+                
+			}
+			if (itemToSelect != NULL)
+			{ 
+				this->set_selection(itemToSelect);
+				reset(UI_MENU_RESET_REMEMBER_POSITION);
+				quick_config_event.iptkey = IPT_UI_SELECT;
+				quick_config_event.itemref = itemToSelect;
+				toggle_none_default(itemToSelect->seq, itemToSelect->seq, *itemToSelect->defseq);
+				update_input(itemToSelect);
+			}
+		}
+		else
+		{
+			reset(UI_MENU_RESET_REMEMBER_POSITION);
+		}
+	}
+    
+}
+
+void menu_input_quick::update_input(struct input_item_data *seqchangeditem)
+{
+	ioport_field::user_settings settings;
+
+	((ioport_field *)seqchangeditem->ref)->get_user_settings(settings);
+    settings.seq[seqchangeditem->seqtype] = seqchangeditem->seq;
+	((ioport_field *)seqchangeditem->ref)->set_user_settings(settings);
+}
+
+menu_input_quick::~menu_input_quick()
+{
+}
+
+/*-------------------------------------------------
     menu_input_specific - handle the game-specific
     input menu
 -------------------------------------------------*/
@@ -1077,6 +1329,8 @@ void ui_menu_input::populate_and_sort(input_item_data *itemlist)
 		/* add the item */
 		item_append(_(text), _(subtext), flags, item);
 	}
+	
+	m_itemlist = itemlist;
 }
 
 
@@ -2635,7 +2889,7 @@ void ui_menu_crosshair::populate()
 ui_menu_crosshair::~ui_menu_crosshair()
 {
 }
-/*
+
 #ifdef USE_SCALE_EFFECTS
 #define SCALE_ITEM_NONE 0
 //-------------------------------------------------
@@ -2673,11 +2927,11 @@ void ui_menu_scale_effect::handle()
 		reset(UI_MENU_RESET_REMEMBER_REF);
 }
 
-
+/*
 -------------------------------------------------
     menu_scale_effect_populate - populate the
     scale effect menu
--------------------------------------------------
+-------------------------------------------------*/
 
 void ui_menu_scale_effect::populate()
 {
@@ -2697,7 +2951,7 @@ void ui_menu_scale_effect::populate()
 	selected = scale_effect.effect;
 }
 #undef SCALE_ITEM_NONE
-#endif // USE_SCALE_EFFECTS */
+#endif // USE_SCALE_EFFECTS
 
 
 #ifdef USE_AUTOFIRE

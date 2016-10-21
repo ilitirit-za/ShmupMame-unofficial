@@ -118,7 +118,7 @@ endif
 
 # replace the various compilers with vconv.exe prefixes
 CC = @$(VCONV) gcc -I.
-LD = @$(VCONV) ld /profile
+LD = @$(VCONV) ld //profile
 AR = @$(VCONV) ar
 RC = @$(VCONV) windres
 
@@ -126,7 +126,7 @@ RC = @$(VCONV) windres
 ifdef DEBUG
 CCOMFLAGS += /MTd
 else
-CCOMFLAGS += /MT
+CCOMFLAGS += //MT
 endif
 
 # turn on link-time codegen if the MAXOPT flag is also set
@@ -138,7 +138,7 @@ endif
 
 # disable warnings and link against bufferoverflowu for 64-bit targets
 ifeq ($(PTR64),1)
-CCOMFLAGS += /wd4267
+CCOMFLAGS += //wd4267
 #LIBS += -lbufferoverflowu
 endif
 
@@ -152,34 +152,36 @@ CCOMFLAGS += /analyze /wd6011 /wd6328 /wd6204 /wd6244 /wd6385 /wd6308 /wd6246 /w
 endif
 
 # enable exception handling for C++
-CPPONLYFLAGS += /EHsc
+CPPONLYFLAGS += //EHsc
 
 # disable function pointer warnings in C++ which are evil to work around
-CPPONLYFLAGS += /wd4191 /wd4060 /wd4065 /wd4640
+CPPONLYFLAGS += //wd4191 //wd4060 //wd4065 //wd4640
 
 # disable warning about exception specifications and using this in constructors
-CPPONLYFLAGS += /wd4290 /wd4355
+CPPONLYFLAGS += //wd4290 //wd4355
 
 # disable performance warnings about casting ints to bools
-CPPONLYFLAGS += /wd4800
+CPPONLYFLAGS += //wd4800
 
 # disable better packing warning
-CPPONLYFLAGS += /wd4371
+CPPONLYFLAGS += //wd4371
 
 # disable side effects warning in STL headers
-CPPONLYFLAGS += /wd4548
+CPPONLYFLAGS += //wd4548
 
 # disable macro redefinition warning
-CCOMFLAGS += /wd4005
+CCOMFLAGS += //wd4005
 
 # disable behavior change: 'member1' called instead of 'member2' warning
-CCOMFLAGS += /wd4350
+CCOMFLAGS += //wd4350
 
 # explicitly set the entry point for UNICODE builds
 LDFLAGS += /ENTRY:wmainCRTStartup
 
 # add some VC++-specific defines
-DEFS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -DXML_STATIC -Dsnprintf=_snprintf -DWIN32
+DEFS += -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -DXML_STATIC -DWIN32
+
+
 
 OSDCLEAN = msvcclean
 
@@ -197,7 +199,7 @@ endif
 #-------------------------------------------------
 
 VCONV_TARGET = $(BUILDOUT)/vconv$(BUILD_EXE)
-VCONV = $(subst /,\,$(VCONV_TARGET))
+VCONV = $(subst /,\\,$(VCONV_TARGET))
 
 ifneq ($(CROSS_BUILD),1)
 BUILD += \

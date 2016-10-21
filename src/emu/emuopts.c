@@ -160,10 +160,10 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_CLEANRATIO,           						 "0",         OPTION_BOOLEAN,    "enable 'clean' integer stretching" },
 	//{ OPTION_SMALLSCREEN,           					 "0",         OPTION_BOOLEAN,"makes the emulated screen smaller" },
 	{ OPTION_VIEWPERCENT "(0.0-1.0)",           		"1",         OPTION_FLOAT,		"percentage of the view to use" },
-	/*
+
 #ifdef USE_SCALE_EFFECTS
 	{ OPTION_SCALE_EFFECT,                               "none",      OPTION_STRING,     "image enhancement effect" },
-#endif USE_SCALE_EFFECTS */
+#endif USE_SCALE_EFFECTS 
 
 	// vector options
 	{ NULL,                                              NULL,        OPTION_HEADER,     "CORE VECTOR OPTIONS" },
