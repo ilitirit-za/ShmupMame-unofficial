@@ -41,10 +41,10 @@
 #include "emuopts.h"
 #include "png.h"
 #include "rendutil.h"
-/*
+
 #ifdef USE_SCALE_EFFECTS
 #include "osdscale.h"
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS 
 
 
 
@@ -67,7 +67,7 @@ const device_type SCREEN = &device_creator<screen_device>;
 const attotime screen_device::DEFAULT_FRAME_PERIOD(attotime::from_hz(DEFAULT_FRAME_RATE));
 
 UINT32 screen_device::m_id_counter = 0;
-/*
+
 #ifdef USE_SCALE_EFFECTS
 //
 //  scaler dimensions
@@ -77,12 +77,12 @@ int     scale_depth;
 int     scale_xsize;
 int     scale_ysize;
 int     scale_bank_offset;
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS
 
 //
 //  SCREEN DEVICE
 //
-/*
+
 #ifdef USE_SCALE_EFFECTS
 void screen_device::video_init_scale_effect()
 {
@@ -289,7 +289,7 @@ void screen_device::texture_set_scale_bitmap(const rectangle &visarea, UINT32 pa
 
 	m_texture[curbank]->set_bitmap(*dst, fixedvis, TEXFORMAT_RGB32);
 }
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS
 
 //-------------------------------------------------
 //  screen_device - constructor
@@ -329,12 +329,12 @@ screen_device::screen_device(const machine_config &mconfig, const char *tag, dev
 	m_unique_id = m_id_counter;
 	m_id_counter++;
 	memset(m_texture, 0, sizeof(m_texture));
-	/*
+	
 #ifdef USE_SCALE_EFFECTS
 	memset(m_scale_bitmap, 0, sizeof(m_scale_bitmap));
 	memset(m_work_bitmap, 0, sizeof(m_work_bitmap));
 	memset(m_scale_dirty, 0, sizeof(m_scale_dirty));
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS 
 }
 
 
@@ -609,10 +609,10 @@ void screen_device::device_stop()
 void screen_device::device_post_load()
 {
 	realloc_screen_bitmaps();
-	/*
+
 #ifdef USE_SCALE_EFFECTS
 	video_init_scale_effect();
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS
 }
 
 
@@ -680,11 +680,11 @@ void screen_device::configure(int width, int height, const rectangle &visarea, a
 
 	// reallocate bitmap if necessary
 	realloc_screen_bitmaps();
-/*
+
 #ifdef USE_SCALE_EFFECTS
 	// init scale
 	video_init_scale_effect();
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS 
 
 	// compute timing parameters
 	m_frame_period = frame_period;
@@ -764,7 +764,7 @@ void screen_device::realloc_screen_bitmaps()
 	m_texture[0]->set_bitmap(m_bitmap[0], m_visarea, m_bitmap[0].texformat());
 	m_texture[1]->set_bitmap(m_bitmap[1], m_visarea, m_bitmap[1].texformat());
 }
-/*
+
 #ifdef USE_SCALE_EFFECTS
 //-------------------------------------------------
 //  realloc_scale_bitmaps - reallocate scale
@@ -846,7 +846,7 @@ void screen_device::realloc_scale_bitmaps()
 	}
 	scale_bank_offset = 1;
 }
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS
 
 
 //-------------------------------------------------
@@ -1187,12 +1187,12 @@ bool screen_device::update_quads()
 			// if we're not skipping the frame and if the screen actually changed, then update the texture
 			if (!machine().video().skip_this_frame() && m_changed)
 			{
-			/*
+			
 #ifdef USE_SCALE_EFFECTS
 				if (scale_effect.effect > 0)
 					texture_set_scale_bitmap(m_visarea, 0);
 				else
-#endif  USE_SCALE_EFFECTS */
+#endif  USE_SCALE_EFFECTS
 				m_texture[m_curbitmap]->set_bitmap(m_bitmap[m_curbitmap], m_visarea, m_bitmap[m_curbitmap].texformat());
 				m_curtexture = m_curbitmap;
 				m_curbitmap = 1 - m_curbitmap;
