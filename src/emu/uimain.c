@@ -8,7 +8,7 @@
     Visit http://mamedev.org for licensing and usage restrictions.
 
 *********************************************************************/
-
+#include <iostream>
 #include "emu.h"
 #include "osdnet.h"
 #include "emuopts.h"
@@ -141,7 +141,7 @@ void ui_menu_main::populate()
 				if (ROMENTRY_ISSYSTEM_BIOS(rom)) { has_bioses= true; break; }
 
 	/* add input menu items */
-	item_append(_("Quick Input Config"), "", 0, (void *)INPUT_QUICK);
+	item_append(_("Quick Input Config"), NULL, 0, (void *)INPUT_QUICK);
 	
 	item_append(_("Input (general)"), NULL, 0, (void *)INPUT_GROUPS);
 
@@ -801,11 +801,11 @@ menu_input_quick::menu_input_quick(running_machine &machine, render_container *c
 
 void menu_input_quick::populate()
 {
-	input_item_data *itemlist = NULL;
+    input_item_data *itemlist = NULL;
 	ioport_field *field;
 	ioport_port *port;
 	int suborder[SEQ_TYPE_TOTAL];
-	int port_count = 0;
+	astring tempstring;
 
 	/* create a mini lookup table for sort order based on sequence type */
 	suborder[SEQ_TYPE_STANDARD] = 0;
@@ -814,8 +814,6 @@ void menu_input_quick::populate()
 
 	/* iterate over the input ports and add menu items */
 	for (port = machine().ioport().first_port(); port != NULL; port = port->next())
-	{
-		port_count++;
 		for (field = port->first_field(); field != NULL; field = field->next())
 		{
 			const char *name = field->name();
@@ -824,7 +822,7 @@ void menu_input_quick::populate()
 			if (name != NULL && field->enabled() &&
 				((field->type() == IPT_OTHER && field->name() != NULL) || machine().ioport().type_group(field->type(), field->player()) != IPG_INVALID))
 			{
-				input_seq_type seqtype;
+                input_seq_type seqtype;
 				UINT32 sortorder;
 
 				/* determine the sorting order */
@@ -850,32 +848,37 @@ void menu_input_quick::populate()
 						}
 						sortorder = ((fieldType + IPT_BUTTON16) << 2) | (player << 12);
 					}
-					else
+                    else
 					{
 						sortorder = (field->type() << 2) | (field->player() << 12);
 					}
-					
-					if (field->device().owner() != NULL)
-						sortorder |= (port_count & 0xfff) * 0x10000;
 				}
 				else
 					sortorder = field->type() | 0xf000;
 
 				/* loop over all sequence types */
-				for (seqtype = SEQ_TYPE_STANDARD; seqtype < SEQ_TYPE_TOTAL; ++seqtype)
+				for (seqtype = SEQ_TYPE_STANDARD; seqtype < SEQ_TYPE_TOTAL; seqtype++)
 				{
+                    // Ignore service mode etc
+                    if (field->type() >= IPT_BILL1 && field->type() <= IPT_KEYBOARD)
+                        continue;
+                    
+                    // Ignore custom buttons
+                    if (field->type() >= IPT_TOGGLE_AUTOFIRE && field->type() <= IPT_CUSTOM4)
+                        continue;
+                    
 					/* build an entry for the standard sequence */
 					input_item_data *item = (input_item_data *)m_pool_alloc(sizeof(*item));
 					memset(item, 0, sizeof(*item));
-					item->ref = &field;
+					item->ref = field;
 					item->seqtype = seqtype;
-					if (pollingitem && pollingref == item->ref && pollingseq == seqtype)
+					if(pollingitem && pollingref == field && pollingseq == seqtype)
 						pollingitem = item;
 					item->seq = field->seq(seqtype);
 					item->defseq = &field->defseq(seqtype);
 					item->sortorder = sortorder + suborder[seqtype];
 					item->type = field->is_analog() ? (INPUT_TYPE_ANALOG + seqtype) : INPUT_TYPE_DIGITAL;
-					item->name = field->name();
+					item->name = name;
 					item->next = itemlist;
 					itemlist = item;
 
@@ -885,14 +888,16 @@ void menu_input_quick::populate()
 				}
 			}
 		}
-	}
 
 	/* sort and populate the menu in a standard fashion */
 	populate_and_sort(itemlist);
 }
 
+
+
+
 void menu_input_quick::handle()
-{
+{    
 	input_item_data *seqchangeditem = NULL;
 	const ui_menu_event *menu_event;
 	bool invalidate = false;
@@ -959,15 +964,15 @@ void menu_input_quick::handle()
 		last_sortorder = item->sortorder;
 	}
 
-	quick_config_event.iptkey = IPT_INVALID;
+    quick_config_event.iptkey = IPT_INVALID;
 	quick_config_event.itemref = NULL;
 
 
 	/* if the sequence changed, update it */
 	if (seqchangeditem != NULL)
 	{
-		update_input(seqchangeditem);
-
+        update_input(seqchangeditem);
+        
 		/* invalidate the menu to force an update */
 		invalidate = true;
 	}
@@ -983,8 +988,9 @@ void menu_input_quick::handle()
 		}
 		
 		if (!itemCleared && seqchangeditem != NULL)
-		{ 
-			input_item_data* currentItem = m_itemlist;
+		{
+        
+            input_item_data* currentItem = m_itemlist;
 			input_item_data* itemToSelect = seqchangeditem;
 			int currentSortOrder = 99999;
 			while (currentItem != NULL)
@@ -996,8 +1002,8 @@ void menu_input_quick::handle()
 				}
 
 				currentItem = currentItem->next;
+                
 			}
-		
 			if (itemToSelect != NULL)
 			{ 
 				this->set_selection(itemToSelect);
@@ -1007,15 +1013,13 @@ void menu_input_quick::handle()
 				toggle_none_default(itemToSelect->seq, itemToSelect->seq, *itemToSelect->defseq);
 				update_input(itemToSelect);
 			}
-			
 		}
 		else
 		{
 			reset(UI_MENU_RESET_REMEMBER_POSITION);
 		}
-
-		
 	}
+    
 }
 
 void menu_input_quick::update_input(struct input_item_data *seqchangeditem)
@@ -1023,7 +1027,7 @@ void menu_input_quick::update_input(struct input_item_data *seqchangeditem)
 	ioport_field::user_settings settings;
 
 	((ioport_field *)seqchangeditem->ref)->get_user_settings(settings);
-	settings.seq[seqchangeditem->seqtype] = seqchangeditem->seq;
+    settings.seq[seqchangeditem->seqtype] = seqchangeditem->seq;
 	((ioport_field *)seqchangeditem->ref)->set_user_settings(settings);
 }
 
