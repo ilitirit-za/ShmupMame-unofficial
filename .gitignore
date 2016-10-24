@@ -34,3 +34,6 @@
 obj/*
 *.log
 *.pdb
+
+build/*
+.vs/*
