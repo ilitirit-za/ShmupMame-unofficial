@@ -18,6 +18,8 @@
 
 include config.def
 
+OUTDIR=build
+
 #-------------------------------------------------
 # specify core target: mame, mess, etc.
 # specify subtarget: mame, mess, tiny, etc.
@@ -873,15 +875,17 @@ ifndef EXECUTABLE_DEFINED
 $(VERSIONOBJ): $(EMUINFOOBJ) $(DRVLIBS) $(LIBOSD) $(LIBCPU) $(LIBEMU) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(ZLIB) $(SOFTFLOAT) $(JPEG_LIB) $(FLAC_LIB) $(7Z_LIB) $(FORMATS_LIB) $(LIBOCORE) $(MIDI_LIB) $(RESFILE)
 
 $(EMULATOR): $(EMUINFOOBJ) $(DRIVLISTOBJ) $(DRVLIBS) $(LIBOSD) $(LIBCPU) $(LIBEMU) $(LIBDASM) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(SOFTFLOAT) $(JPEG_LIB) $(FLAC_LIB) $(7Z_LIB) $(FORMATS_LIB) $(ZLIB) $(LIBOCORE) $(MIDI_LIB) $(RESFILE) $(CLIRESFILE)
+	test -d build || mkdir build
 	$(CC) $(CDEFS) $(CFLAGS) -c $(SRC)/version.c -o $(VERSIONOBJ)
 	@echo Linking $@...
-	$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) -mconsole $(VERSIONOBJ) $^ $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) -mconsole $(VERSIONOBJ) $^ $(LIBS) -o $(OUTDIR)\$@
 
 ifneq ($(WINUI),)
 $(MAMEUIEXE): $(EMUINFOOBJ) $(DRIVLISTOBJ) $(DRVLIBS) $(LIBOSD) $(LIBCPU) $(LIBEMU) $(LIBDASM) $(LIBSOUND) $(LIBUTIL) $(EXPAT) $(SOFTFLOAT) $(JPEG_LIB) $(FLAC_LIB) $(7Z_LIB) $(FORMATS_LIB) $(ZLIB) $(LIBOCORE_NOMAIN) $(MIDI_LIB) $(RESFILE) $(GUIRESFILE)
-	$(CC) $(CDEFS) $(CFLAGS) -c $(SRC)/version.c -o $(VERSIONOBJ)
+	test -d build || mkdir build
+    $(CC) $(CDEFS) $(CFLAGS) -c $(SRC)/version.c -o $(VERSIONOBJ)
 	@echo Linking $@...
-	$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) -mwindows $(VERSIONOBJ) $^ $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(LDFLAGSEMULATOR) -mwindows $(VERSIONOBJ) $^ $(LIBS) -o $(OUTDIR)\$@
 endif
 
 ifeq ($(TARGETOS),win32)
@@ -893,8 +897,6 @@ endif
 endif
 
 endif
-
-
 
 #-------------------------------------------------
 # generic rules
